@@ -9,9 +9,13 @@ app.post("/events", (req, res) => {
   const event = req.body;
 
   // These are the different microservices to which we are
-  // forwarding the event data via a POST request.
+  // forwarding/echoing the event data via a POST request.
   axios.post("http://localhost:4000/events", event);
   axios.post("http://localhost:4001/events", event);
+
+  // this could be a Query service which consolidates data
+  // from all other services and can be used by a client to
+  // make a single GET request (much efficient!)
   axios.post("http://localhost:4002/events", event);
 
   res.send({ status: "OK" });
