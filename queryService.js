@@ -7,12 +7,24 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const axios = require("axios");
 
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
 const dataStructure = {};
+
+const handleEvent = (type, data) => {
+  // for every type of event, perform relevant operations
+  switch (type) {
+    case "PostCreated":
+      const { id, title } = data;
+      // update dataStructure
+      dataStructure[id] = { id, title };
+      break;
+  }
+};
 
 // this serves the "posts" microservice which is running on PORT 4000
 app.get("/posts", (req, res) => {
@@ -25,16 +37,19 @@ app.get("/posts", (req, res) => {
 app.post("/events", (req, res) => {
   const { type, data } = req.body;
 
-  // for every type of event, perform relevant operations
-  switch (type) {
-    case "PostCreated":
-      const { id, title } = data;
-      // update dataStructure
-      dataStructure[id] = { id, title };
-      break;
-  }
+  handleEvent(type, data);
 
   res.send({});
 });
 
-app.listen(4002, () => console.log("Listening on 4002"));
+app.listen(4002, async () => {
+  console.log("Listening on 4002");
+
+  // fetch all the events that have occured from the event bus data store
+  const res = await axios.get("http://localhost:4005/events");
+
+  // update the query data structure so that Query service is synced up
+  for (let event of res.data) {
+    handleEvent(event.type, event.data);
+  }
+});
